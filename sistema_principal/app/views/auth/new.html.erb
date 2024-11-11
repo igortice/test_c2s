@@ -1,0 +1,79 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header text-center bg-primary text-white">
+          <h3>Cadastro de Usuário</h3>
+        </div>
+        <div class="card-body">
+          <%= form_with model: @user, url: register_path, local: true, data: { turbo: false } do |form| %>
+
+            <!-- Exibe erros gerais se houver -->
+            <% if @user.errors.any? %>
+              <div class="alert alert-danger">
+                <h4><%= pluralize(@user.errors.count, "erro") %> impedem o cadastro:</h4>
+                <ul>
+                  <% @user.errors.full_messages.each do |message| %>
+                    <li><%= message %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <!-- Campo Nome Completo -->
+            <div class="mb-3">
+              <%= form.label :name, 'Nome Completo', class: 'form-label' %>
+              <%= form.text_field :name, class: "form-control #{'is-invalid' if @user.errors[:name].any?}", placeholder: 'Digite seu nome completo' %>
+              <% if @user.errors[:name].any? %>
+                <div class="invalid-feedback">
+                  <%= @user.errors[:name].join(', ') %>
+                </div>
+              <% end %>
+            </div>
+
+            <!-- Campo Email -->
+            <div class="mb-3">
+              <%= form.label :email, 'Email', class: 'form-label' %>
+              <%= form.email_field :email, class: "form-control #{'is-invalid' if @user.errors[:email].any?}", placeholder: 'Digite seu email' %>
+              <% if @user.errors[:email].any? %>
+                <div class="invalid-feedback">
+                  <%= @user.errors[:email].join(', ') %>
+                </div>
+              <% end %>
+            </div>
+
+            <!-- Campo Senha -->
+            <div class="mb-3">
+              <%= form.label :password, 'Senha', class: 'form-label' %>
+              <%= form.password_field :password, class: "form-control #{'is-invalid' if @user.errors[:password].any?}", placeholder: 'Digite sua senha' %>
+              <% if @user.errors[:password].any? %>
+                <div class="invalid-feedback">
+                  <%= @user.errors[:password].join(', ') %>
+                </div>
+              <% end %>
+            </div>
+
+            <!-- Campo Confirme a Senha -->
+            <div class="mb-3">
+              <%= form.label :password_confirmation, 'Confirme a Senha', class: 'form-label' %>
+              <%= form.password_field :password_confirmation, class: "form-control #{'is-invalid' if @user.errors[:password_confirmation].any?}", placeholder: 'Confirme sua senha' %>
+              <% if @user.errors[:password_confirmation].any? %>
+                <div class="invalid-feedback">
+                  <%= @user.errors[:password_confirmation].join(', ') %>
+                </div>
+              <% end %>
+            </div>
+
+            <!-- Botão de Cadastro -->
+            <div class="d-grid">
+              <%= form.submit 'Cadastrar', class: 'btn btn-primary btn-lg' %>
+            </div>
+          <% end %>
+        </div>
+        <div class="card-footer text-center">
+          <small class="text-muted">Já tem uma conta? <a href="<%= auth_login_form_path %>">Faça login</a></small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

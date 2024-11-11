@@ -1,0 +1,77 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sp_db
+    environment:
+      POSTGRES_DB: ${DB_POSTGRES_DB}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+    ports:
+      - "${DB_POSTGRES_PORT}:${DB_POSTGRES_PORT}"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${DB_POSTGRES_USER} -d ${DB_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - sp_pgdata:/var/lib/postgresql/data
+    networks:
+      - sp_network
+
+  redis:
+    image: redis:alpine
+    container_name: redis_service
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - sp_redisdata:/data
+    networks:
+      - sp_network
+
+  sistema_principal:
+    build:
+      context: .
+    image: sistema_principal:v1
+    container_name: sp_web
+    working_dir: /sistema_principal
+    environment:
+      HOST: ${SP_APP_HOST}
+      MICROSERVICE_AUTENTICACAO_URL: ${MICROSERVICE_AUTENTICACAO_URL}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SP_POSTGRES_DB}
+      PORT: ${SP_RAILS_PORT}
+      RAILS_ENV: ${SP_RAILS_ENV}
+      RAILS_MASTER_KEY: ${SP_RAILS_MASTER_KEY}
+      SECRET_KEY_BASE: ${SP_SECRET_KEY_BASE}
+      REDIS_URL: redis://redis:6379/1
+    ports:
+      - "${SP_RAILS_PORT}:${SP_RAILS_PORT}"
+    volumes:
+      - .:/sistema_principal
+      - sp_storage:/sistema_principal/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    stdin_open: true # Necessário para o pry
+    tty: true # Habilita terminal interativo
+    networks:
+      - sp_network
+
+networks:
+  sp_network:
+
+volumes:
+  sp_pgdata:
+  sp_storage:
+  sp_redisdata:

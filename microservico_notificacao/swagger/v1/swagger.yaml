@@ -1,0 +1,156 @@
+---
+openapi: 3.0.1
+info:
+  title: Api de Notificação
+  version: v1
+paths:
+  "/api/v1/notifications":
+    post:
+      summary: Cria uma notificação
+      tags:
+      - Notifications
+      parameters: []
+      responses:
+        '202':
+          description: Notificação criada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Notification processing initiated.
+                required:
+                - message
+        '422':
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                    - Task ID não pode ser vazio
+                    - User ID inválido
+                required:
+                - errors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                task_id:
+                  type: string
+                user_id:
+                  type: string
+                task_status:
+                  type: string
+                  enum:
+                  - in_progress
+                  - completed
+                  - failed
+                  nullable: true
+                callback_data:
+                  type: object
+                  additionalProperties: true
+              required:
+              - task_id
+              - user_id
+  "/api/v1/notifications/{id}":
+    put:
+      summary: Atualiza uma notificação
+      tags:
+      - Notifications
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '202':
+          description: Notificação atualizada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Notification update processing initiated.
+                required:
+                - message
+        '422':
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example:
+                    - Task status não pode ser vazio
+                required:
+                - errors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                task_status:
+                  type: string
+                  enum:
+                  - in_progress
+                  - completed
+                  - failed
+                callback_data:
+                  type: object
+                  additionalProperties: true
+              required: []
+  "/api/v1/notifications/{id}/status":
+    get:
+      summary: Consulta o status de uma notificação
+      tags:
+      - Notifications
+      parameters:
+      - name: id
+        in: path
+        description: ID da notificação
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Status da notificação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                  task_status:
+                    type: string
+                    enum:
+                    - in_progress
+                    - completed
+                    - failed
+                  updated_at:
+                    type: string
+                    format: date_time
+                required:
+                - task_id
+                - task_status
+                - updated_at
+        '404':
+          description: Notificação não encontrada

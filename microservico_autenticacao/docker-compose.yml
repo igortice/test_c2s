@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ma_db
+    environment:
+      POSTGRES_DB: ${DB_POSTGRES_DB}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+    ports:
+      - "${DB_POSTGRES_PORT}:${DB_POSTGRES_PORT}"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${DB_POSTGRES_USER} -d ${DB_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ma_pgdata:/var/lib/postgresql/data
+    networks:
+      - ma_network
+
+  microservico_autenticacao:
+    build:
+      context: .
+    image: microservico_autenticacao:v1
+    container_name: microservico_autenticacao
+    working_dir: /microservico_autenticacao
+    environment:
+      HOST: ${MA_APP_HOST}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${MA_POSTGRES_DB}
+      PORT: ${MA_RAILS_PORT}
+      RAILS_ENV: ${MA_RAILS_ENV}
+      RAILS_MASTER_KEY: ${MA_RAILS_MASTER_KEY}
+      SECRET_KEY_BASE: ${MA_SECRET_KEY_BASE}
+    ports:
+      - "${MA_RAILS_PORT}:${MA_RAILS_PORT}"
+    volumes:
+      - .:/microservico_autenticacao
+      - ma_storage:/microservico_autenticacao/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ma_network
+
+networks:
+  ma_network:
+
+volumes:
+  ma_pgdata:
+  ma_storage:

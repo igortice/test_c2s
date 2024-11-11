@@ -1,0 +1,96 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mw_db
+    environment:
+      POSTGRES_DB: ${DB_POSTGRES_DB}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+    ports:
+      - "${DB_POSTGRES_PORT}:${DB_POSTGRES_PORT}"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${DB_POSTGRES_USER} -d ${DB_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mw_pgdata:/var/lib/postgresql/data
+    networks:
+      - mw_network
+
+  redis:
+    image: redis:alpine
+    container_name: redis_service
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mw_redisdata:/data
+    networks:
+      - mw_network
+
+  sidekiq:
+    image: microservico_webscraping:v1
+    container_name: sidekiq_service
+    command: bundle exec sidekiq -e ${MW_RAILS_ENV}
+    environment:
+      REDIS_URL: "redis://redis:${REDIS_PORT}/0"
+      RAILS_ENV: ${MW_RAILS_ENV}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      DB_POSTGRES_DB: ${MW_POSTGRES_DB}
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - .:/microservico_webscraping
+    networks:
+      - mw_network
+
+  microservico_webscraping:
+    build:
+      context: .
+    image: microservico_webscraping:v1
+    container_name: microservico_webscraping
+    working_dir: /microservico_webscraping
+    environment:
+      HOST: ${MW_APP_HOST}
+      SISTEMA_PRINCIPAL_URL: ${SISTEMA_PRINCIPAL_URL}
+      MICROSERVICE_NOTIFICACAO_URL: ${MICROSERVICE_NOTIFICACAO_URL}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${MW_POSTGRES_DB}
+      PORT: ${MW_RAILS_PORT}
+      RAILS_ENV: ${MW_RAILS_ENV}
+      RAILS_MASTER_KEY: ${MW_RAILS_MASTER_KEY}
+      SECRET_KEY_BASE: ${MW_SECRET_KEY_BASE}
+      REDIS_URL: "redis://redis:${REDIS_PORT}/0"
+    ports:
+      - "${MW_RAILS_PORT}:${MW_RAILS_PORT}"
+    volumes:
+      - .:/microservico_webscraping
+      - mw_storage:/microservico_webscraping/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mw_network
+
+networks:
+  mw_network:
+
+volumes:
+  mw_pgdata:
+  mw_storage:
+  mw_redisdata:

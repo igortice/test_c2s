@@ -1,0 +1,16 @@
+<% flash.each do |type, message| %>
+  <%# Mapeia o tipo de mensagem flash para o tipo de alerta do Bootstrap %>
+  <% bootstrap_class = case type.to_sym
+                         when :notice then 'alert alert-success'
+                         when :alert then 'alert alert-danger'
+                         when :info then 'alert alert-info'
+                         when :warning then 'alert alert-warning'
+                         else 'alert alert-primary'
+                       end %>
+
+  <div class="card shadow-lg alert-dismissible fade show rounded-3 <%= bootstrap_class %>" role="alert">
+    <h4 class="card-title"><%= type.to_s.capitalize %></h4>
+    <p class="card-text"><%= message %></p>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% end %>

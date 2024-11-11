@@ -1,0 +1,22 @@
+#!/bin/bash -e
+
+# Enable jemalloc for reduced memory usage and latency.
+if [ -z "${LD_PRELOAD+x}" ] && [ -f /usr/lib/*/libjemalloc.so.2 ]; then
+  export LD_PRELOAD="$(echo /usr/lib/*/libjemalloc.so.2)"
+fi
+
+# Run database preparation tasks if starting the Rails server
+if [ "${1}" == "./bin/rails" ] && [ "${2}" == "server" ]; then
+  echo "Preparing database..."
+  ./bin/rails db:prepare
+  echo "Database preparation complete."
+fi
+
+# Remove stale PID file if it exists
+if [ -f tmp/pids/server.pid ]; then
+  echo "Removing stale PID file..."
+  rm tmp/pids/server.pid
+fi
+
+# Execute the passed command
+exec "${@}"

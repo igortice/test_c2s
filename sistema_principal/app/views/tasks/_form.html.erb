@@ -1,0 +1,35 @@
+<%= form_with model: @task, local: true, data: { turbo: false } do |form| %>
+  <div class="mb-3">
+    <%= form.label :title, "Título", class: "form-label" %>
+    <%= form.text_field :title, class: "form-control #{'is-invalid' if @task.errors[:title].any?}" %>
+    <% if @task.errors[:title].any? %>
+      <div class="invalid-feedback">
+        <%= @task.errors[:title].join(', ') %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :description, "Descrição", class: "form-label" %>
+    <%= form.text_area :description, class: "form-control #{'is-invalid' if @task.errors[:description].any?}" %>
+    <% if @task.errors[:description].any? %>
+      <div class="invalid-feedback">
+        <%= @task.errors[:description].join(', ') %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mb-3">
+    <%= form.label :url, "URL", class: "form-label" %>
+    <%= form.url_field :url, class: "form-control #{'is-invalid' if @task.errors[:url].any?}" %>
+    <% if @task.errors[:url].any? %>
+      <div class="invalid-feedback">
+        <%= @task.errors[:url].join(', ') %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="text-center">
+    <%= form.submit class: "btn btn-primary" %>
+  </div>
+<% end %>

@@ -1,0 +1,66 @@
+<div class="container mt-5">
+  <div class="card shadow-lg border-0">
+    <div class="card-header bg-primary text-white text-center">
+      <h2 class="mb-0"><i class="bi bi-info-circle me-2"></i>Detalhes da Tarefa</h2>
+    </div>
+    <div class="card-body">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <p class="mb-1"><strong>Título:</strong></p>
+          <p class="fs-5"><%= @task.title %></p>
+        </div>
+        <div class="col-md-6">
+          <p class="mb-1"><strong>Status:</strong></p>
+          <span class="badge <%= @task.status_badge_class %> fs-6">
+            <%= @task.status.capitalize %>
+          </span>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <p class="mb-1"><strong>Descrição:</strong></p>
+          <p class="fs-5 text-muted"><%= @task.description %></p>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-12">
+          <p class="mb-1"><strong>URL:</strong></p>
+          <a href="<%= @task.url %>" target="_blank" class="fs-5 text-decoration-none">
+            <i class="bi bi-link-45deg"></i> <%= @task.url %>
+          </a>
+        </div>
+      </div>
+
+      <!-- Exibindo valores do JSON (marca, modelo, preço) -->
+      <hr>
+      <div class="row">
+        <div class="col-md-4">
+          <p class="mb-1"><strong>Marca:</strong></p>
+          <p class="fs-5 text-muted"><%= @task.marca || 'Não informado' %></p>
+        </div>
+        <div class="col-md-4">
+          <p class="mb-1"><strong>Modelo:</strong></p>
+          <p class="fs-5 text-muted"><%= @task.modelo || 'Não informado' %></p>
+        </div>
+        <div class="col-md-4">
+          <p class="mb-1"><strong>Preço:</strong></p>
+          <p class="fs-5 text-muted"><%= @task.preco || 'Não informado' %></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer bg-light text-center">
+      <div class="d-flex justify-content-center gap-3">
+        <a href="<%= edit_task_path(@task) %>" class="btn btn-warning">
+          <i class="bi bi-pencil"></i> Editar
+        </a>
+        <%= button_to task_path(@task), method: :delete, form_class: 'delete-alertbox', class: 'btn btn-danger' do %>
+          <i class="bi bi-trash"></i> Excluir
+        <% end %>
+        <a href="<%= tasks_path %>" class="btn btn-secondary">
+          <i class="bi bi-arrow-left-circle"></i> Voltar
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

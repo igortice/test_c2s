@@ -1,0 +1,5 @@
+:concurrency: 5
+:queues:
+  - projeto1_default
+  - projeto1_mailers
+  - projeto1_low_priority

@@ -1,0 +1,44 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-lg">
+        <div class="card-header text-center bg-primary text-white">
+          <h3>Login</h3>
+        </div>
+        <div class="card-body">
+          <%= form_with url: login_path, local: true, data: { turbo: false } do |form| %>
+            <!-- Campo Email -->
+            <div class="mb-3">
+              <%= form.label :email, 'Email', class: 'form-label' %>
+              <%= form.email_field :email, class: "form-control #{'is-invalid' if flash[:email_error]}", placeholder: 'Digite seu email' %>
+              <% if flash[:email_error] %>
+                <div class="invalid-feedback">
+                  <%= flash[:email_error] %>
+                </div>
+              <% end %>
+            </div>
+
+            <!-- Campo Senha -->
+            <div class="mb-3">
+              <%= form.label :password, 'Senha', class: 'form-label' %>
+              <%= form.password_field :password, class: "form-control #{'is-invalid' if flash[:password_error]}", placeholder: 'Digite sua senha' %>
+              <% if flash[:password_error] %>
+                <div class="invalid-feedback">
+                  <%= flash[:password_error] %>
+                </div>
+              <% end %>
+            </div>
+
+            <!-- Botão de Login -->
+            <div class="d-grid">
+              <%= form.submit 'Entrar', class: 'btn btn-primary btn-lg' %>
+            </div>
+          <% end %>
+        </div>
+        <div class="card-footer text-center">
+          <small class="text-muted">Não tem uma conta? <a href="<%= register_path %>">Cadastre-se</a></small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

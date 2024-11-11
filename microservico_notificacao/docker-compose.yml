@@ -1,0 +1,95 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mn_db
+    environment:
+      POSTGRES_DB: ${DB_POSTGRES_DB}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+    ports:
+      - "${DB_POSTGRES_PORT}:${DB_POSTGRES_PORT}"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${DB_POSTGRES_USER} -d ${DB_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mn_pgdata:/var/lib/postgresql/data
+    networks:
+      - mn_network
+
+  redis:
+    image: redis:alpine
+    container_name: redis_service
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mn_redisdata:/data
+    networks:
+      - mn_network
+
+  sidekiq:
+    image: microservico_notificacao:v1
+    container_name: sidekiq_service
+    command: bundle exec sidekiq -e ${MN_RAILS_ENV}
+    environment:
+      REDIS_URL: "redis://redis:${REDIS_PORT}/0"
+      RAILS_ENV: ${MN_RAILS_ENV}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      DB_POSTGRES_DB: ${MN_POSTGRES_DB}
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - .:/microservico_notificacao
+    networks:
+      - mn_network
+
+  microservico_notificacao:
+    build:
+      context: .
+    image: microservico_notificacao:v1
+    container_name: microservico_notificacao
+    working_dir: /microservico_notificacao
+    environment:
+      HOST: ${MN_APP_HOST}
+      SISTEMA_PRINCIPAL_URL: ${SISTEMA_PRINCIPAL_URL}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${MN_POSTGRES_DB}
+      PORT: ${MN_RAILS_PORT}
+      RAILS_ENV: ${MN_RAILS_ENV}
+      RAILS_MASTER_KEY: ${MN_RAILS_MASTER_KEY}
+      SECRET_KEY_BASE: ${MN_SECRET_KEY_BASE}
+      REDIS_URL: "redis://redis:${REDIS_PORT}/0"
+    ports:
+      - "${MN_RAILS_PORT}:${MN_RAILS_PORT}"
+    volumes:
+      - .:/microservico_notificacao
+      - mn_storage:/microservico_notificacao/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mn_network
+
+networks:
+  mn_network:
+
+volumes:
+  mn_pgdata:
+  mn_storage:
+  mn_redisdata:

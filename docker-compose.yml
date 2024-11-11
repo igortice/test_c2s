@@ -1,0 +1,188 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: c2s_db
+    environment:
+      POSTGRES_DB: ${DB_POSTGRES_DB}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+    ports:
+      - "${DB_POSTGRES_PORT}:${DB_POSTGRES_PORT}"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${DB_POSTGRES_USER} -d ${DB_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - network
+
+  redis:
+    image: redis:alpine
+    container_name: redis_service
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redisdata:/data
+    networks:
+      - network
+
+  sidekiq:
+    image: microservico_notificacao:v1
+    container_name: sidekiq_service
+    command: bundle exec sidekiq -e ${MN_RAILS_ENV}
+    environment:
+      REDIS_URL: "redis://redis:${REDIS_PORT}/0"
+      RAILS_ENV: ${MN_RAILS_ENV}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      DB_POSTGRES_DB: ${MN_POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./microservico_notificacao:/microservico_notificacao
+    networks:
+      - network
+
+  sistema_principal:
+    build:
+      context: ./sistema_principal
+    image: sistema_principal:v1
+    container_name: sistema_principal
+    working_dir: /sistema_principal
+    environment:
+      HOST: ${SP_APP_HOST}
+      MICROSERVICE_AUTENTICACAO_URL: ${MICROSERVICE_AUTENTICACAO_URL}
+      MICROSERVICE_WEBSCRAPING_URL: ${MICROSERVICE_WEBSCRAPING_URL}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${SP_POSTGRES_DB}
+      PORT: ${SP_RAILS_PORT}
+      RAILS_ENV: ${SP_RAILS_ENV}
+      RAILS_MASTER_KEY: ${SP_RAILS_MASTER_KEY}
+      SECRET_KEY_BASE: ${SP_SECRET_KEY_BASE}
+      REDIS_URL: redis://redis:6379/1
+    ports:
+      - "${SP_RAILS_PORT}:${SP_RAILS_PORT}"
+    volumes:
+      - ./sistema_principal:/sistema_principal
+      - sp_storage:/sistema_principal/storage
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - network
+
+  microservico_notificacao:
+    build:
+      context: ./microservico_notificacao
+    image: microservico_notificacao:v1
+    container_name: microservico_notificacao
+    working_dir: /microservico_notificacao
+    environment:
+      HOST: ${MN_APP_HOST}
+      SISTEMA_PRINCIPAL_URL: ${SISTEMA_PRINCIPAL_URL}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${MN_POSTGRES_DB}
+      PORT: ${MN_RAILS_PORT}
+      RAILS_ENV: ${MN_RAILS_ENV}
+      RAILS_MASTER_KEY: ${MN_RAILS_MASTER_KEY}
+      SECRET_KEY_BASE: ${MN_SECRET_KEY_BASE}
+      REDIS_URL: "redis://redis:${REDIS_PORT}/0"
+    ports:
+      - "${MN_RAILS_PORT}:${MN_RAILS_PORT}"
+    volumes:
+      - ./microservico_notificacao:/microservico_notificacao
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - network
+
+  microservico_autenticacao:
+    build:
+      context: ./microservico_autenticacao
+    image: microservico_autenticacao:v1
+    container_name: microservico_autenticacao
+    working_dir: /microservico_autenticacao
+    environment:
+      HOST: ${MA_APP_HOST}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${MA_POSTGRES_DB}
+      PORT: ${MA_RAILS_PORT}
+      RAILS_ENV: ${MA_RAILS_ENV}
+      RAILS_MASTER_KEY: ${MA_RAILS_MASTER_KEY}
+      SECRET_KEY_BASE: ${MA_SECRET_KEY_BASE}
+    ports:
+      - "${MA_RAILS_PORT}:${MA_RAILS_PORT}"
+    volumes:
+      - ./microservico_autenticacao:/microservico_autenticacao
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - network
+
+  microservico_webscraping:
+    build:
+      context: ./microservico_webscraping
+    image: microservico_webscraping:v1
+    container_name: microservico_webscraping
+    working_dir: /microservico_webscraping
+    environment:
+      HOST: ${MW_APP_HOST}
+      SISTEMA_PRINCIPAL_URL: ${SISTEMA_PRINCIPAL_URL}
+      MICROSERVICE_NOTIFICACAO_URL: ${MICROSERVICE_NOTIFICACAO_URL}
+      POSTGRES_HOST: ${DB_POSTGRES_HOST}
+      POSTGRES_PORT: ${DB_POSTGRES_PORT}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${MW_POSTGRES_DB}
+      PORT: ${MW_RAILS_PORT}
+      RAILS_ENV: ${MW_RAILS_ENV}
+      RAILS_MASTER_KEY: ${MW_RAILS_MASTER_KEY}
+      SECRET_KEY_BASE: ${MW_SECRET_KEY_BASE}
+      REDIS_URL: "redis://redis:${REDIS_PORT}/0"
+    ports:
+      - "${MW_RAILS_PORT}:${MW_RAILS_PORT}"
+    volumes:
+      - ./microservico_webscraping:/microservico_webscraping
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - network
+
+networks:
+  network:
+
+volumes:
+  pgdata:
+  redisdata:
+  sp_storage:
