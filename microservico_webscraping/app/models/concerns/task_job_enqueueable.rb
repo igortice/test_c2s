@@ -2,7 +2,7 @@ module TaskJobEnqueueable
   extend ActiveSupport::Concern
 
   included do
-    # after_create_commit :enqueue_scraping_job
+    after_create_commit :enqueue_scraping_job
   end
 
   private
